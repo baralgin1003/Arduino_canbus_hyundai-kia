@@ -35,15 +35,20 @@ void setup() {
   }
   //если пусто, то ничего не делаем.
   Serial.println("summ eeprom= " + String(sumTmp));
-  if(sumTmp!=388){
+  if(sumTmp!=388 && sumTmp!=2048){
      Serial.println("loaded from eeprom");
      memccpy(forSend, stnTmp, "", 8);
+     for(int i=0;i<sizeof forSend;i++){
+      Serial.println(forSend[i], HEX);
+     }
+  }else{
+     Serial.println("not loaded from eeprom");
   }
 
   if (CAN0.begin(MCP_ANY, CAN_100KBPS, MCP_8MHZ) == CAN_OK) Serial.println("MCP2515 Initialized Successfully!");
   else Serial.println("Error Initializing MCP2515...");
 
-  CAN0.setMode(MCP_NORMAL);  
+  CAN0.setMode(MCP_NORMAL);   // Change to normal mode to allow messages to be transmitted
 }
 
 void sendCAN() {
@@ -59,6 +64,12 @@ void sendCAN() {
   delay(18);
   CAN0.sendMsgBuf(addr, 0, 8, fff);
 
+
+  if (sndStat == CAN_OK) {
+    // Serial.println("Message Sent Successfully!");
+  } else {
+    //  Serial.println("Error Sending Message...");
+  }
   delay(100);   // send data per 100ms
 }
 
@@ -94,11 +105,12 @@ void loop() {
 
   if (Serial.available())
   {
+    Serial.setTimeout(20);
     Serial.readBytesUntil(77, receive, 10);
     checkSumm();
   }
 
-  if (millis() - LastTime > interval) { 
+  if (millis() - LastTime > interval) {  // проверяем, прошла ли уже секунда с момента последнего выполнения условия;
     LastTime = millis();
     sendCAN();
   }
